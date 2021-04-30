@@ -12,6 +12,7 @@
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
 #endif
+unsigned char i = 0x00;
 
 enum states {START, WAIT, WAIT2, HOLDINC, HOLDDEC, INC, DEC, RESET} state;
 
@@ -48,19 +49,18 @@ void TickFct()
 			}
 			break;
 		case HOLDDEC:
-			if((~PINA & 0x03) == 0x02){
+			if((~PINA & 0x03) == 0x01){
 				state = HOLDDEC;
 			}else if((~PINA & 0x03) == 0x03){
 				state = RESET;
-			}else if((~PINA & 0x03) == 0x01){
-				state = INC;
 			}else{
 				state = WAIT2;
 			}
 			break;
 
 		case INC:
-			if((~PINA & 0x03) == 0x02){
+			i = i + 1;
+			if(((~PINA & 0x03) == 0x02) && (i>0x07)){
 				state = DEC;
 			}else if((~PINA & 0x03) == 0x03){
 				state = RESET;
@@ -69,10 +69,10 @@ void TickFct()
 			}else{
 				state = WAIT2;
 			}
-			
 			break;
 		case DEC:
-			if((~PINA & 0x03) == 0x01){
+			i = i - 1;
+			if(((~PINA & 0x03) == 0x01) && (i== 0x00)){
 				state = INC;
 			}else if((~PINA & 0x03) == 0x03){
 				state = RESET;
@@ -95,10 +95,10 @@ void TickFct()
 	}
 	switch(state){
 		case START:
-			PORTC = 0x07;
+			PORTC = 0x01;
 			break;
 		case WAIT:
-			PORTC = 0x07;
+			PORTC = 0x01;
 			break;
 		case WAIT2:
 			break;
@@ -108,24 +108,24 @@ void TickFct()
 			break;
 
 		case INC:
-			if(PINC < 0x09){
-				PORTC = PINC + 0x01;
+			if(PINC < 0x7D){
+				PORTC = PINC << 1;
 			}else{
-				PORTC = 0x09;
+				PORTC = 0x01;
 			}
 			break;
 		case DEC:
 			if(PINC > 0x00){
-				PORTC = PINC - 0x01;
+				PORTC = PINC;
 			}else{
-				PORTC = 0x00;
+				PORTC = 0x01;
 			}
 			break;
 		case RESET:
 			PORTC = 0x00;
 			break;
 		default:
-			PORTC = 0x07;
+			PORTC = 0x80;
 			break;
 	}
 }

@@ -12,40 +12,133 @@
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
 #endif
+unsigned char i = 0x00;
+
+enum states {START, WAIT, WAIT2, HOLDINC, HOLDDEC, INC, DEC, RESET} state;
+
+
+void TickFct()
+{
+	switch(state){
+		case START:
+			state = WAIT;
+			break;
+		case WAIT:
+			state = WAIT2;
+			break;
+		case WAIT2:
+			if((~PINA & 0x03) == 0x01){
+				state = INC;
+			}else if((~PINA & 0x03) == 0x02){
+				state = DEC;
+			}else if((~PINA & 0x03) == 0x03){
+				state = RESET;
+			}else if((~PINA & 0x03) == 0x00){
+				state =  WAIT2;
+			}
+			break;
+		case HOLDINC:
+			if((~PINA & 0x03) == 0x01){
+				state = HOLDINC;
+			}else if((~PINA & 0x03) == 0x03){
+				state = RESET;
+			}else if((~PINA & 0x03) == 0x02){
+				state = DEC;
+			}else{
+				state = WAIT2;
+			}
+			break;
+		case HOLDDEC:
+			if((~PINA & 0x03) == 0x01){
+				state = HOLDDEC;
+			}else if((~PINA & 0x03) == 0x03){
+				state = RESET;
+			}else{
+				state = WAIT2;
+			}
+			break;
+
+		case INC:
+			i = i + 1;
+			if(((~PINA & 0x03) == 0x02) && (i>0x07)){
+				state = DEC;
+			}else if((~PINA & 0x03) == 0x03){
+				state = RESET;
+			}else if((~PINA & 0x03) == 0x01){
+				state = HOLDINC;
+			}else{
+				state = WAIT2;
+			}
+			break;
+		case DEC:
+			i = i - 1;
+			if(((~PINA & 0x03) == 0x01) && (i== 0x00)){
+				state = INC;
+			}else if((~PINA & 0x03) == 0x03){
+				state = RESET;
+			}else if((~PINA & 0x03) == 0x02){
+				state = HOLDDEC;
+			}else{
+				state = WAIT2;
+			}
+			break;
+		case RESET:
+			if((~PINA & 0x03) == 0x03){
+				state = RESET;
+			}else{
+				state = WAIT2;
+			}
+			break;
+		default:
+			state = START;
+			break;
+	}
+	switch(state){
+		case START:
+			PORTC = 0x01;
+			break;
+		case WAIT:
+			PORTC = 0x01;
+			break;
+		case WAIT2:
+			break;
+		case HOLDINC:
+			break;
+		case HOLDDEC:
+			break;
+
+		case INC:
+			if(PINC < 0x7D){
+				PORTC = PINC << 1;
+			}else{
+				PORTC = 0x01;
+			}
+			break;
+		case DEC:
+			if(PINC > 0x00){
+				PORTC = PINC;
+			}else{
+				PORTC = 0x01;
+			}
+			break;
+		case RESET:
+			PORTC = 0x00;
+			break;
+		default:
+			PORTC = 0x80;
+			break;
+	}
+}
 
 int main(void) {
     /* Insert DDR and PORT initializations */
-	DDRA = 0x00; PORTA =  0xFF; //set PORTA as input
-	DDRC = 0xFF; PORTC = 0x00; //set PORTC as output
-
-	unsigned char tmpA = 0x00;
-	unsigned char tmpC = 0x00;
-
-	/* Insert your solution below */
+	DDRA = 0x00; PORTA = 0xFF; // PORTA is input
+	DDRC = 0xFF; PORTC = 0x00; //PORTB is output
+	state = START;
+    /* Insert your solution below */
     while (1) {
-	    tmpA = (~PINA) & 0x0F;
-	    tmpC = 0x00;
-	  	    
-		//13-15 lights PC5-PC0 
-	    if(tmpA >= 0x0D){
-		    tmpC = 0x3F;
-	    }else if (tmpA >= 0x0A){
-		    tmpC = 0x3E;
-	    }else if (tmpA >= 0x07){
-		    tmpC = 0x3C;
-	    }else if (tmpA >= 0x05){
-		    tmpC = 0x38;
-	    }else if (tmpA >= 0x03){
-		    tmpC = 0x70; //0111 0000
-	    }else if (tmpA >= 0x01){
-		    tmpC = 0x60; // 0110 0000
-	    }else{
-		    tmpC = 0x40;
-	    }
-
-	    PORTC = tmpC;
-	   	    
-
+	    TickFct();
     }
     return 1;
 }
+
