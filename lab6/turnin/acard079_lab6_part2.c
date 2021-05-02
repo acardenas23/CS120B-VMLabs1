@@ -1,7 +1,7 @@
 /*	Author: Ana Cardenas Beltran
  *  Partner(s) Name: 
  *	Lab Section:21
- *	Assignment: Lab #6  Exercise #1
+ *	Assignment: Lab #6  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -19,8 +19,8 @@ enum states{start, init, b0, b1, b2, b0hold, b1hold, b2hold, reset} state;
 void Tick()
 {
 	switch(state){
-		tmpA0 = ~PINA & 0x01;
 		prev = 0x00; //will use mealy to know if it was previously in a state before going to reset
+		tmpA0 = ~PINA & 0x01;
 		case start:
 			state = init;
 			break;
@@ -111,16 +111,26 @@ int main(void) {
     /* Insert DDR and PORT initializations */
 	DDRA = 0x00; PORTA = 0xFF; //PORTA is input
 	DDRB = 0xFF; PORTB = 0x00; //PORTB is output
-	TimerSet(300);
+	TimerSet(100); //3*100 = 300
 	TimerOn();
+	unsigned char i = 0x00;
+	unsigned char tmpA0 = 0x00;
     /* Insert your solution below */
 
     while (1) {
+	    tmpA0 = ~PINA & 0x01;
 
-	    Tick();
+	    if((i ==0) || (tmpA0 == 0x01)){
+		    Tick(); //once i reaches zero, call function again or if button is pressed
+	    }
 	   
 	    while(!TimerFlag){}
+	    ++i;
 	    TimerFlag = 0;
+
+	    if(i==3){
+		    i = 0; //using i as a counter to stay in each state 3 times 
+	    }
 
 
     }
