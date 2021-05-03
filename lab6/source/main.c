@@ -44,7 +44,6 @@ void Tick()
 			break;
 		case b1:
 			if(tmpA0){
-				prev = 0x02;
 				state = b1hold;
 			}else{
 				state = b2;
@@ -101,7 +100,7 @@ void Tick()
 		case b2hold:
 			break;
 		case reset:
-			PORTB = 0x01;
+			PORTB = 0x07;
 			break;
 		default:
 			PORTB = 0x01;
@@ -114,24 +113,22 @@ int main(void) {
 	TimerSet(100); //3*100 = 300
 	TimerOn();
 	unsigned char i = 0x00;
-	unsigned char tmpA0 = 0x00;
+//	unsigned char tmpA0 = 0x00;
     /* Insert your solution below */
 
     while (1) {
-	    tmpA0 = ~PINA & 0x01;
+	   tmpA0 = ~PINA & 0x01;
 
-	    if((i ==0) || (tmpA0 == 0x01)){
-		    Tick(); //once i reaches zero, call function again or if button is pressed
+	    if(i%3 == 0){
+		    Tick();
 	    }
-	   
-	    while(!TimerFlag){}
+	    if(tmpA0){
+		    Tick();
+	    }
+	    
+	    while(!TimerFlag);
 	    ++i;
 	    TimerFlag = 0;
-
-	    if(i==3){
-		    i = 0; //using i as a counter to stay in each state 3 times 
-	    }
-
 
     }
     return 1;
