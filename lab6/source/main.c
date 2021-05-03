@@ -13,13 +13,13 @@
 #include "timer.h"
 #endif
 
-unsigned char prev;
-unsigned char tmpA0;
-enum states{start, init, b0, b1, b2, b0hold, b1hold, b2hold, reset} state;
+enum states{start, init, b0, b1, b2, b3, b0hold, b1hold, b2hold, b3hold, reset} state;
 void Tick()
 {
+	//unsigned char prev = 0x00;
+	unsigned char tmpA0 = 0x00;
 	switch(state){
-		prev = 0x00; //will use mealy to know if it was previously in a state before going to reset
+		//prev = 0x00; //will use mealy to know which state it was previously in before being reset
 		tmpA0 = ~PINA & 0x01;
 		case start:
 			state = init;
@@ -29,46 +29,60 @@ void Tick()
 			break;
 		case b0:
 			if(tmpA0){
-				prev = 0x01;
 				state = b0hold;
 			}else{
+				//prev = 0x01;
 				state = b1;
 			}
 			break;
 		case b0hold:
-			if(tmpA0 || !prev){
+			if(tmpA0){
 				state = b0hold; //stay in b0hold while button is pressed
-			}else if(!tmpA0 && prev){
-				state = reset; //go to reset once button is depressed if it was previously in a state
+			}else if(!tmpA0){
+				state = reset; //go to reset once button is depressed
 			}
 			break;
 		case b1:
 			if(tmpA0){
-				state = b1hold;
+				state = b1hold; //go to hold state if button is pressed
 			}else{
-				state = b2;
+				state = b2; //if button is not pressed and prev = 1, got to b2
 			}
 			break;
 		case b1hold:
-			if(tmpA0 || !(prev == 0x02)){
+			if(tmpA0){
 				state = b1hold;
-			}else if(!tmpA0 && (prev==0x02)){
+			}else if(!tmpA0){
 				state = reset;
 			}
 			break;
 		case b2:
+			//prev = 0x03;
 			if(tmpA0){
-				prev = 0x03;
 				state = b2hold;
+			}else{
+				state = b3; //0x02
+			}
+			break;
+		case b2hold:
+			if(tmpA0){
+				state = b2hold;
+			}else if(!tmpA0){
+				state = reset;
+			}
+			break;
+		case b3:
+			if(tmpA0){
+				state = b3hold;
 			}else{
 				state = b0;
 			}
 			break;
-		case b2hold:
-			if(tmpA0 || !(prev==0x03)){
-				state = b2hold;
-			}else if(!tmpA0 && (prev==0x03)){
-				state = reset;
+		case b3hold:
+			if(tmpA0){
+				state = b3hold;
+			}else{
+				state = b0;
 			}
 			break;
 		case reset:
@@ -93,14 +107,19 @@ void Tick()
 		case b2:
 			PORTB = 0x04;
 			break;
+		case b3:
+			PORTB = 0x02;
+			break;
 		case b0hold:
 			break;
 		case b1hold:
 			break;
 		case b2hold:
 			break;
+		case b3hold:
+			break;
 		case reset:
-			PORTB = 0x07;
+			PORTB = 0x01;
 			break;
 		default:
 			PORTB = 0x01;
@@ -110,19 +129,18 @@ int main(void) {
     /* Insert DDR and PORT initializations */
 	DDRA = 0x00; PORTA = 0xFF; //PORTA is input
 	DDRB = 0xFF; PORTB = 0x00; //PORTB is output
-	TimerSet(100); //3*100 = 300
+	TimerSet(100); //100*3 = 300
 	TimerOn();
 	unsigned char i = 0x00;
-//	unsigned char tmpA0 = 0x00;
+	unsigned char tmpA0 = 0x00;
     /* Insert your solution below */
 
     while (1) {
 	   tmpA0 = ~PINA & 0x01;
 
-	    if(i%3 == 0){
-		    Tick();
-	    }
 	    if(tmpA0){
+		    state = reset;
+	    }else if(i%3 == 0){
 		    Tick();
 	    }
 	    
