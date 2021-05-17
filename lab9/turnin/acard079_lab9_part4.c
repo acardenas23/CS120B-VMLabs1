@@ -136,7 +136,7 @@ void ButtonSM(unsigned char A2){
 }
 
 enum FR_states {FR_init, FR_inc, FR_dec} FR_state;
-static unsigned char period = 0;
+static unsigned long period = 0;
 void FrequencySM(unsigned char A){
 	switch(FR_state){
 		case FR_init:
@@ -233,29 +233,28 @@ int main(void) {
 
 	FR_state = FR_init;
 	SP_state = SP_off;
-	period = 5;
 	
 	while (1) {
 		
 		buttonA2 = (~PINA) & 0x04;
 		buttonA = (~PINA) & 0x03;
-		ButtonSM(buttonA2);
-		if(i%300 == 0){
-			ThreeLEDsSM();
-			i = 0;
 
-		}
-		if(j%1000 == 0){
-			BlinkingLEDSM();
-			j = 0;
-		}
+		ButtonSM(buttonA2);
 		FrequencySM(buttonA);
+		
 		if(k >= period){
-			//once k = period, call SpeakerSM
 			SpeakerSM();
 			k = 0;
 		}
+		if(i >= 300){
+			ThreeLEDsSM();
+			i = 0;
+		}
 
+		if(j >= 1000){
+			BlinkingLEDSM();
+			j = 0;
+		}
 		CombineLEDsSM();
 
 		while(!TimerFlag);
@@ -264,5 +263,5 @@ int main(void) {
 		++j;
 		++k;
 	}
-    return 1;
+    return 0;
 }
