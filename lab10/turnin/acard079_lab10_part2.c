@@ -16,135 +16,127 @@
 #include "timer.h"
 #endif
 
-unsigned char x;//keypad input
-unsigned char tmpB = 0x00;
-unsigned char keypad = 0x00; //global var that will hold value of keypad
-enum KP_states {kp_start, kp_init};
-int KP_Tick(int state)
-{
-        switch(state){
-                case kp_start:
-                        state = kp_init;
-                        break;
-                case kp_init:
-                        x = GetKeypadKey();
-                        switch(x) {
-                                case '\0': tmpB = 0x1F; break;
-                                case '1': tmpB = 0x01; break; //hex equivalent
-                                case '2': tmpB = 0x02; break;
-                                case '3': tmpB = 0x03; break;
-                                case '4': tmpB = 0x04; break;
-                                case '5': tmpB = 0x05; break;
-                                case '6': tmpB = 0x06; break;
-                                case '7': tmpB = 0x07; break;
-                                case '8': tmpB = 0x08; break;
-                                case '9': tmpB = 0x09; break;
-                                case 'A': tmpB = 0x0A; break;
-                                case 'B': tmpB = 0x0B; break;
-                                case 'C': tmpB = 0x0C; break;
-                                case 'D': tmpB = 0x0D; break;
-                                case '*': tmpB = 0x0E; break;
-                                case '0': tmpB = 0x00; break;
-                                case '#': tmpB = 0x0F; break;
-                                default: tmpB = 0x1B; break;
-                        }
-                        state = kp_init;
-                        break;
-                default:
-                        state = kp_start;
-                        break;
-        }
-        switch(state){
-                case kp_start:
-                        break;
-                case kp_init:
-                        PORTB = tmpB;
-                        break;
-                default:
-                                    state = kp_start;
-                        break;
-        }
-        switch(state){
-                case kp_start:
-                        break;
-                case kp_init:
-			keypad = tmpB; //keypad will hold what the keypad value is
-                        break;
-                default:
-                        break;
-        }
-        return state;
-
-}
-
+unsigned char x = 0x00;//keypad input
+unsigned char prev = 0;
 unsigned char keypadlock = 0x00;
-enum UL_states {ul_start, ul_init, s1, s2, s3, s4, s5, unlocked};
+enum UL_states {ul_start, ul_init, s1, s2, s3, s4, s5, unlocked, ul_release};
 int UnlockSM(int state) {
 	unsigned char press = ~PINB & 0x80;
+	x = GetKeypadKey();
 	switch(state){
 		case ul_start:
-			state = ul_init;
-			break;
+			state = ul_init; break;
 		case ul_init:
+			prev = 0;
 			keypadlock = 0x00;
-			if(keypad == 0x0F){
-				//if # if pressed
-				state = s1;
-			}else{
-				state = ul_init;
-			}
-			break;
+			state = x == '#'? ul_release:ul_init;
+		       	break;
 		case s1:
+			prev = 1;
 			keypadlock = 0x00;
-			if(keypad == 0x01){
-				state = s2;
+			if(x == '\0'){
+				state = s1;
+			}else if(x == '1'){
+				state = ul_release;
 			}else{
 				state = ul_init;
-			}
+			} 
 			break;
 		case s2:
+			prev = 2;
 			keypadlock = 0x00;
-			if(keypad == 0x02){
-				state = s3;
+			if(x == '\0'){
+				state = s2;
+			}else if(x == '2'){
+				state = ul_release;
 			}else{
 				state = ul_init;
 			}
-			break;
+		       	break;
 		case s3:
+			prev = 3;
 			keypadlock = 0x00;
-			if(keypad == 0x03){
-				state = s4;
+			if(x == '\0'){
+				state = s3;
+			}else if(x == '3'){
+				state = ul_release;
 			}else{
 				state = ul_init;
 			}
 			break;
 		case s4:
+			prev = 4;
 			keypadlock = 0x00;
-			if(keypad == 0x04){
-				state = s5;
+			if(x == '\0'){
+				state = s4;
+			}else if(x == '4'){
+				state = ul_release;
 			}else{
 				state = ul_init;
 			}
-			break;
+		       	break;
 		case s5:
+			prev = 5;
 			keypadlock = 0x00;
-			if(keypad == 0x05){
-				state = unlocked;
+			if(x == '\0'){
+				state = s5;
+			}else if(x == '5'){
+				state = ul_release;
 			}else{
 				state = ul_init;
+			}
+		       	break;
+		case ul_release:
+			if((prev == 0) && (x == '\0')){
+				state = s1;
+			}else if((prev ==1) && (x == '\0')){
+				state = s2;
+			}else if((prev ==2) && (x == '\0')){
+				state = s3;
+			}else if((prev ==3) && (x == '\0')){
+				state = s4;
+			}else if((prev ==4) && (x == '\0')){
+				state = s5;
+			}else if((prev == 5) && (x == '\0')){
+				state = unlocked;
+			}else{
+				state = ul_release;
 			}
 			break;
 		case unlocked:
 			keypadlock = 0x01;
-			if(press == 0x80){
-				//lock
-				state = ul_init;
-			}else{
-				state = unlocked;
-			}
-			break;
+			state = press == 0x80? ul_init: unlocked;
+		       	break;
+		default: state = ul_start; break;
 	}
-	PORTB = keypadlock;
+	switch(state){
+		case ul_start:break;
+		case ul_init:
+			PORTB = 0x00;
+			break;
+		case s1:
+			PORTB = 0x00;
+			break;
+		case s2:
+			PORTB = 0x00;
+			break;
+		case s3:
+			PORTB = 0x00;
+			break;
+		case s4:
+			PORTB = 0x00;
+			break;
+		case s5:
+			PORTB = 0x00;
+			break;
+		case ul_release:
+			PORTB = 0x00;
+			break;
+		case unlocked:
+			PORTB = 0x01;
+			break;
+		default: break;
+	}
 	return state;
 }
 
@@ -198,11 +190,11 @@ int LockSM(int state) {
 int main(void) {
 	//DDRA = 0x0F; PORTA = 0xF0; //lower 4 are input, upper4 are output
 	DDRB = 0x0F; PORTB = 0xF0; //lower 4 are input, upper 4 are output
-	DDRC = 0x00; PORTC = 0xFF; //input
+	DDRC = 0xF0; PORTC = 0x0F; //input
 
 	//Declare array of tasks
-	static task task1, task2;
-	task *tasks[] = { &task1, &task2 };
+	static task task1;
+	task *tasks[] = { &task1 };
 	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 
 	const char start = 0;
@@ -210,12 +202,12 @@ int main(void) {
 	task1.state = start; //initial state
 	task1.period = 50;
 	task1.elapsedTime = task1.period;
-	task1.TickFct = &KP_Tick;
-	//Task 2 UnlockSM()
+	task1.TickFct = &UnlockSM;
+	/*//Task 2 UnlockSM()
 	task2.state = start;
 	task2.period = 50;
 	task2.elapsedTime = task2.period;
-	task2.TickFct = &UnlockSM;
+	task2.TickFct = &UnlockSM;*/
 	//Task 3 LockSM()
 	/*task3.state = start;
 	task3.period = 50;

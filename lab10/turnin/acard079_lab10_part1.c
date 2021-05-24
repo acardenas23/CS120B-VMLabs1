@@ -28,24 +28,24 @@ int KP_Tick(int state)
 		case kp_init:
 			x = GetKeypadKey();
 			switch(x) {
-				case '\0': tmpB = 0x1F; break;
-				case '1': tmpB = 0x01; break; //hex equivalent
-		        	case '2': tmpB = 0x02; break; 
-				case '3': tmpB = 0x03; break;
-				case '4': tmpB = 0x04; break;
-				case '5': tmpB = 0x05; break;
-				case '6': tmpB = 0x06; break;
-				case '7': tmpB = 0x07; break;
-				case '8': tmpB = 0x08; break;
-				case '9': tmpB = 0x09; break;
-				case 'A': tmpB = 0x0A; break;
-				case 'B': tmpB = 0x0B; break;
-				case 'C': tmpB = 0x0C; break; 
-				case 'D': tmpB = 0x0D; break;
-				case '*': tmpB = 0x0E; break;
-				case '0': tmpB = 0x00; break;
-				case '#': tmpB = 0x0F; break;	
-				default: tmpB = 0x1B; break;
+				case '\0': tmpB = 0x00; break;
+				case '1': tmpB = 0x80; break; //hex equivalent
+		        	case '2': tmpB = 0x80; break; 
+				case '3': tmpB = 0x80; break;
+				case '4': tmpB = 0x80; break;
+				case '5': tmpB = 0x80; break;
+				case '6': tmpB = 0x80; break;
+				case '7': tmpB = 0x80; break;
+				case '8': tmpB = 0x80; break;
+				case '9': tmpB = 0x80; break;
+				case 'A': tmpB = 0x80; break;
+				case 'B': tmpB = 0x80; break;
+				case 'C': tmpB = 0x80; break; 
+				case 'D': tmpB = 0x80; break;
+				case '*': tmpB = 0x80; break;
+				case '0': tmpB = 0x80; break;
+				case '#': tmpB = 0x80; break;	
+				default: tmpB = 0x00; break;
 			}
 			state = kp_init;
 			break;
@@ -71,7 +71,7 @@ int KP_Tick(int state)
 int main(void) {
 	unsigned char x;
 	DDRB = 0xFF; PORTB = 0x00; //portb set to output, output inits 0s
-	DDRC = 0xF0; PORTC = 0x0F;
+	DDRC = 0x00; PORTC = 0xFF;
 
 	//Declare array of tasks
 	static task task1;
